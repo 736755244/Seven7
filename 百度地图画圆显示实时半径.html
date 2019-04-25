@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+    <style type="text/css">
+        body, html{width: 100%;height: 100%;margin:0;font-family:"微软雅黑";}
+        #allmap {width: 100%; height:500px; overflow: hidden;}
+        #result {width:100%;font-size:12px;}
+        dl,dt,dd,ul,li{
+            margin:0;
+            padding:0;
+            list-style:none;
+        }
+        p{font-size:12px;}
+        dt{
+            font-size:14px;
+            font-family:"微软雅黑";
+            font-weight:bold;
+            border-bottom:1px dotted #000;
+            padding:5px 0 5px 5px;
+            margin:5px 0;
+        }
+        dd{
+            padding:5px 0 0 5px;
+        }
+        li{
+            line-height:28px;
+        }
+    </style>
+    <script type="text/javascript" src="http://api.map.baidu.com/api?v=2.0&ak=自己的ak"></script>
+    <!--加载鼠标绘制工具-->
+    <script type="text/javascript" src="http://api.map.baidu.com/library/DrawingManager/1.4/src/DrawingManager_min.js"></script>
+    <link rel="stylesheet" href="http://api.map.baidu.com/library/DrawingManager/1.4/src/DrawingManager_min.css" />
+    <!--加载检索信息窗口-->
+    <script type="text/javascript" src="http://api.map.baidu.com/library/SearchInfoWindow/1.4/src/SearchInfoWindow_min.js"></script>
+    <link rel="stylesheet" href="http://api.map.baidu.com/library/SearchInfoWindow/1.4/src/SearchInfoWindow_min.css" />
+    <title>鼠标绘制圆--实时显示圆半径</title>
+</head>
+<body>
+<div id="allmap" style="overflow:hidden;zoom:1;position:relative;">
+    <div id="map" style="height:100%;-webkit-transition: all 0.5s ease-in-out;transition: all 0.5s ease-in-out;"></div>
+</div>
+<script type="text/javascript">
+   //绘制地图
+   	  var map = new BMap.Map('map');
+      var point = new BMap.Point(114.065537,22.553321);
+   	  map.centerAndZoom(point , 13);
+  	  map.enableScrollWheelZoom();
+    //圆的样式
+		 var styleOptions = {
+            strokeColor: "red",    //边线颜色。
+            fillColor: "#DDD3D1",      //填充颜色。当参数为空时，圆形将没有填充效果。
+            strokeWeight: 2,       //边线的宽度，以像素为单位。
+            strokeOpacity: 0.8,	   //边线透明度，取值范围0 - 1。
+            fillOpacity: 0.6,      //填充的透明度，取值范围0 - 1。
+            strokeStyle: 'solid' //边线的样式，solid或dashed。
+        };
+        //画圆
+ 		var drawingManager = new BMapLib.DrawingManager(map, {
+            isOpen: false, //是否开启绘制模式
+            enableDrawingTool: false, //是否显示工具栏
+            drawingToolOptions: {
+                anchor: BMAP_ANCHOR_TOP_RIGHT, //位置
+                offset: new BMap.Size(5, 5) //偏离值
+            },
+            circleOptions: styleOptions, //圆的样式
+        });
+        drawingManager.open();
+        //drawingManager.enableCalculate();     //计算区域面积
+        drawingManager.setDrawingMode(BMAP_DRAWING_CIRCLE);//
+		 var label=null;
+		 var polyline=null;
+		 map.addEventListener("mousemove", function () {
+            if(drawingManager._mask!=null)
+            {
+                drawingManager._mask.addEventListener('mousedown',showCirle);
+                map.removeEventListener("mousemove", showCirle);
+            }
+        });
+		var centerPoint=null;//圆心
+        var showCirle=function(e){
+            if (centerPoint == null) {
+                debugger;
+                centerPoint=e.point;
+                drawingManager._mask.addEventListener("mousemove", showRadius);//showRadius计算画圆的半径，下面将进行讲解
+                //将获取的圆心，作为marker点添加再地图上
+                var maker = new BMap.Marker(e.point);
+                map.addOverlay(maker);
+            }
+        };
+		var showRadius=function (e) {
+			var radius=drawingManager._map.getDistance(centerPoint, e.point);
+			if(!isNaN(radius)) {
+				map.removeOverlay(label); //清除上一个显示半径的label标注
+				map.removeOverlay(polyline);//清除上一个圆的半径直线
+				//添加文字标签
+				var opts = {
+					position: e.point,    // 指定文本标注所在的地理位置（当前鼠标的位置）
+					offset: new BMap.Size(5, -15)    //设置文本偏移量
+				};
+				label = new BMap.Label("半径：" + (radius / 1000).toFixed(2) + "公里", opts);  // 创建文本标注对象
+				//文本标注样式
+				label.setStyle({
+					color:'#438eff',
+					//fontSize:'14px',
+					fontWeight:'bold',
+					border: "0px solid #ccc",
+					backgroundColor:'',//#2267AD
+				});
+				//从圆心画半径
+				polyline = new BMap.Polyline([
+					centerPoint,
+					e.point
+				], {strokeColor:"red", strokeWeight:2, strokeOpacity:0.5});//后面参数为划线的样式
+				map.addOverlay(polyline);//添加半径直线
+				map.addOverlay(label);//添加label
+			}
+		};
+</script>
+</body>
+</html>
