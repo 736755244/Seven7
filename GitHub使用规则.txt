@@ -1,0 +1,7 @@
+1/打开git-bash.exe
+2/git init
+3/git add .
+4/git commit -m "备注"
+5/git remote add origin https://github.com/736755244/Seven7.git
+6/git pull origin master(出现 src refspec master does not match any错误时)
+7/git push -u origin master
